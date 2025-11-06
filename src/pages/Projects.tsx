@@ -24,7 +24,7 @@ export default function Projects() {
     try {
       const [projectsRes, teamRes] = await Promise.all([
         supabase.from('projects').select('*').order('created_at', { ascending: false }),
-        supabase.from('team_members').select('*'),
+        supabase.from('team_members').select('*').order('created_at', { ascending: false }),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);

@@ -8,7 +8,6 @@ import { Camera } from 'lucide-react';
 export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,16 +17,8 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setEmail('');
-        setPassword('');
-        alert('Check your email for confirmation!');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
@@ -50,10 +41,8 @@ export default function AuthPage() {
 
         <Card className="border-slate-700 bg-slate-800">
           <CardHeader>
-            <CardTitle className="text-white">{isSignUp ? 'Create Account' : 'Sign In'}</CardTitle>
-            <CardDescription className="text-slate-400">
-              {isSignUp ? 'Join Bosroller Studio' : 'Welcome back'}
-            </CardDescription>
+            <CardTitle className="text-white">Sign In</CardTitle>
+            <CardDescription className="text-slate-400">Welcome back to Bosroller Studio</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
@@ -83,21 +72,9 @@ export default function AuthPage() {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
               >
-                {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+                {loading ? 'Loading...' : 'Sign In'}
               </Button>
             </form>
-
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError('');
-                }}
-                className="text-sm text-blue-400 hover:text-blue-300"
-              >
-                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-              </button>
-            </div>
           </CardContent>
         </Card>
 
