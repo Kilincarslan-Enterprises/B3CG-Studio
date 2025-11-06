@@ -29,6 +29,12 @@ export interface Comment {
   created_at: string;
 }
 
+export interface ScriptLine {
+  memberId: string;
+  memberName: string;
+  line: string;
+}
+
 export interface Project {
   id: string;
   user_id: string;
@@ -39,6 +45,8 @@ export interface Project {
   shoot_date?: string;
   shoot_time?: string;
   notes?: string;
+  script?: ScriptLine[];
+  posted_by_member_id?: string;
   created_at: string;
   updated_at: string;
 }

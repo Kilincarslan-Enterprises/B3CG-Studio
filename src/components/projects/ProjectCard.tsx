@@ -1,13 +1,14 @@
 import { Project, TeamMember } from '../../types';
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, Edit } from 'lucide-react';
 
 interface ProjectCardProps {
   project: Project;
   teamMembers: TeamMember[];
   onClick: () => void;
+  onEdit?: () => void;
 }
 
-export default function ProjectCard({ project, teamMembers, onClick }: ProjectCardProps) {
+export default function ProjectCard({ project, teamMembers, onClick, onEdit }: ProjectCardProps) {
   const statusColors: Record<string, string> = {
     Ideas: 'bg-slate-600 text-slate-100',
     Planned: 'bg-blue-600 text-white',
@@ -17,15 +18,25 @@ export default function ProjectCard({ project, teamMembers, onClick }: ProjectCa
   };
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full p-4 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors text-left group"
-    >
-      <div className="space-y-3">
-        <div>
-          <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors truncate">
-            {project.title}
-          </h3>
+    <div className="relative w-full p-4 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors text-left group">
+      {onEdit && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="absolute top-2 right-2 p-2 bg-slate-800 hover:bg-blue-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 min-h-[36px] min-w-[36px] flex items-center justify-center"
+          title="Edit project"
+        >
+          <Edit className="w-4 h-4 text-white" />
+        </button>
+      )}
+      <button onClick={onClick} className="w-full text-left">
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-semibold text-white group-hover:text-blue-300 transition-colors truncate pr-10">
+              {project.title}
+            </h3>
           {project.description && (
             <p className="text-xs text-slate-400 mt-1 line-clamp-2">{project.description}</p>
           )}
@@ -68,7 +79,8 @@ export default function ProjectCard({ project, teamMembers, onClick }: ProjectCa
             )}
           </div>
         )}
-      </div>
-    </button>
+        </div>
+      </button>
+    </div>
   );
 }

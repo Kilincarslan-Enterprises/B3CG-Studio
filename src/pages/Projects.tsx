@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Project, ProjectStatus, TeamMember } from '../types';
-import { Button } from '../components/ui/button';
 import ProjectCard from '../components/projects/ProjectCard';
 import ProjectDetailModal from '../components/projects/ProjectDetailModal';
+import ProjectFormModal from '../components/projects/ProjectFormModal';
 import { Plus } from 'lucide-react';
 
 export default function Projects() {
@@ -12,7 +12,8 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProjectStatus, setNewProjectStatus] = useState<ProjectStatus>('Ideas');
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function Projects() {
     try {
       const [projectsRes, teamRes] = await Promise.all([
         supabase.from('projects').select('*').order('created_at', { ascending: false }),
-        supabase.from('team_members').select('*'),
+        supabase.from('team_members').select('*').order('created_at', { ascending: false }),
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
@@ -35,28 +36,8 @@ export default function Projects() {
     }
   };
 
-  const handleCreateProject = async (title: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .insert([
-          {
-            title,
-            status: newProjectStatus,
-            description: '',
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setProjects([data, ...projects]);
-        setShowNewProjectModal(false);
-      }
-    } catch (error) {
-      console.error('Error creating project:', error);
-    }
+  const handleProjectSaved = () => {
+    fetchData();
   };
 
   const handleUpdateProject = async (project: Project) => {
@@ -128,13 +109,18 @@ export default function Projects() {
                       setSelectedProject(project);
                       setShowDetailModal(true);
                     }}
+                    onEdit={() => {
+                      setEditingProject(project);
+                      setShowFormModal(true);
+                    }}
                   />
                 ))}
 
                 <button
                   onClick={() => {
                     setNewProjectStatus(column.status);
-                    setShowNewProjectModal(true);
+                    setEditingProject(null);
+                    setShowFormModal(true);
                   }}
                   className="w-full p-3 border-2 border-dashed border-slate-600 rounded-lg text-slate-400 hover:border-slate-500 hover:text-slate-300 transition-colors flex items-center justify-center gap-2 min-h-[44px]"
                 >
@@ -161,50 +147,17 @@ export default function Projects() {
         />
       )}
 
-      {showNewProjectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-md w-full border border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-4">Create New Project</h2>
-            <input
-              type="text"
-              placeholder="Project title..."
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 mb-4"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  const value = (e.target as HTMLInputElement).value.trim();
-                  if (value) {
-                    handleCreateProject(value);
-                    (e.target as HTMLInputElement).value = '';
-                  }
-                }
-              }}
-            />
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowNewProjectModal(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  const input = document.querySelector(
-                    'input[placeholder="Project title..."]'
-                  ) as HTMLInputElement;
-                  const value = input?.value.trim();
-                  if (value) {
-                    handleCreateProject(value);
-                  }
-                }}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                Create
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProjectFormModal
+        project={editingProject}
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setEditingProject(null);
+        }}
+        onSave={handleProjectSaved}
+        teamMembers={teamMembers}
+        initialStatus={newProjectStatus}
+      />
     </div>
   );
 }
