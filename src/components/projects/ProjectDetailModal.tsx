@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import {
   Select,
   SelectContent,
@@ -11,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { X, Plus, Trash2, Save, MessageSquare } from 'lucide-react';
+import { X, Plus, Trash2, Save, MessageSquare, FileText, HardDrive } from 'lucide-react';
+import FilesMediaSection from './FilesMediaSection';
 
 interface ProjectDetailModalProps {
   project: Project;
@@ -155,15 +157,27 @@ export default function ProjectDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-      <div className="bg-slate-800 rounded-lg border border-slate-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 sm:p-6 flex items-center justify-between">
+      <div className="bg-slate-800 rounded-lg border border-slate-700 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 sm:p-6 flex items-center justify-between z-10">
           <h2 className="text-xl sm:text-2xl font-bold text-white">Project Details</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center">
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="w-full bg-slate-900 rounded-none border-b border-slate-700 grid grid-cols-2 sticky top-[73px] z-10">
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="files" className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4" />
+              Files & Media
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="p-4 sm:p-6 space-y-4 sm:space-y-6 mt-0">
           <div>
             <label className="text-sm text-slate-400 mb-2 block">Title</label>
             <Input
@@ -313,25 +327,39 @@ export default function ProjectDetailModal({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-slate-700">
-            <Button
-              onClick={handleSave}
-              disabled={loading}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2 min-h-[44px]"
-            >
-              <Save className="w-4 h-4" />
-              Save Changes
-            </Button>
-            <Button
-              onClick={handleDelete}
-              variant="destructive"
-              className="flex-1 bg-red-600 hover:bg-red-700 min-h-[44px]"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
-        </div>
+            <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-slate-700">
+              <Button
+                onClick={handleSave}
+                disabled={loading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <Save className="w-4 h-4" />
+                Save Changes
+              </Button>
+              <Button
+                onClick={handleDelete}
+                variant="destructive"
+                className="flex-1 bg-red-600 hover:bg-red-700 min-h-[44px]"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="files" className="p-4 sm:p-6 mt-0">
+            <FilesMediaSection
+              project={project as Project & {
+                drive_folder_id?: string;
+                drive_subfolders?: {
+                  raw: string;
+                  edited: string;
+                  thumbnails: string;
+                };
+              }}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
