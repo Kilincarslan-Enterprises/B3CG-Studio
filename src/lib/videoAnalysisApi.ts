@@ -112,6 +112,13 @@ export async function triggerVideoAnalysis(
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+    console.log('[triggerVideoAnalysis] Starting analysis trigger', {
+      videoId,
+      fileName,
+      fileSize,
+      endpoint: `${supabaseUrl}/functions/v1/analyze-video`,
+    });
+
     const response = await fetch(`${supabaseUrl}/functions/v1/analyze-video`, {
       method: 'POST',
       headers: {
@@ -125,13 +132,27 @@ export async function triggerVideoAnalysis(
       }),
     });
 
+    console.log('[triggerVideoAnalysis] Response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      return { error: new Error(errorData.error || 'Failed to trigger analysis') };
+      const responseText = await response.text();
+      console.error('[triggerVideoAnalysis] Error response:', responseText);
+      let errorMessage = 'Failed to trigger analysis';
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = responseText || errorMessage;
+      }
+      return { error: new Error(errorMessage) };
     }
+
+    const data = await response.json();
+    console.log('[triggerVideoAnalysis] Success:', data);
 
     return { error: null };
   } catch (error) {
+    console.error('[triggerVideoAnalysis] Exception:', error);
     return {
       error: error instanceof Error ? error : new Error('Unknown error')
     };
@@ -171,6 +192,12 @@ export async function sendChatMessage(
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+    console.log('[sendChatMessage] Sending chat message', {
+      videoId,
+      questionLength: question.length,
+      endpoint: `${supabaseUrl}/functions/v1/ask-about-video`,
+    });
+
     const response = await fetch(`${supabaseUrl}/functions/v1/ask-about-video`, {
       method: 'POST',
       headers: {
@@ -185,14 +212,26 @@ export async function sendChatMessage(
       }),
     });
 
+    console.log('[sendChatMessage] Response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      return { response: null, error: new Error(errorData.error || 'Failed to send message') };
+      const responseText = await response.text();
+      console.error('[sendChatMessage] Error response:', responseText);
+      let errorMessage = 'Failed to send message';
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        errorMessage = responseText || errorMessage;
+      }
+      return { response: null, error: new Error(errorMessage) };
     }
 
     const data = await response.json();
+    console.log('[sendChatMessage] Success, response length:', data.response?.length || 0);
     return { response: data.response, error: null };
   } catch (error) {
+    console.error('[sendChatMessage] Exception:', error);
     return {
       response: null,
       error: error instanceof Error ? error : new Error('Unknown error')
