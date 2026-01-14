@@ -24,10 +24,14 @@ export async function createVideoAnalysis(
         chat_history: [],
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       return { data: null, error: new Error(error.message) };
+    }
+
+    if (!data) {
+      return { data: null, error: new Error('Failed to create video analysis record') };
     }
 
     return { data: data as VideoAnalysis, error: null };
@@ -167,13 +171,13 @@ export async function getVideoAnalysis(
       .from('video_analyses')
       .select('*')
       .eq('id', videoId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       return { data: null, error: new Error(error.message) };
     }
 
-    return { data: data as VideoAnalysis, error: null };
+    return { data: data as VideoAnalysis | null, error: null };
   } catch (error) {
     return {
       data: null,

@@ -36,22 +36,26 @@ export default function AIVideoAnalyzer() {
   }, []);
 
   const loadVideoList = async () => {
-    setIsLoadingList(true);
-    const { data, error } = await getUserVideoAnalyses();
-    if (error) {
-      console.error('Error loading video list:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load video list',
-        variant: 'destructive',
-      });
-    } else if (data) {
-      setVideoList(data);
-      if (data.length > 0 && !currentAnalysis) {
-        setCurrentAnalysis(data[0]);
+    try {
+      setIsLoadingList(true);
+      const { data, error } = await getUserVideoAnalyses();
+      if (error) {
+        console.error('Error loading video list:', error);
+        setVideoList([]);
+      } else if (data) {
+        setVideoList(data);
+        if (data.length > 0 && !currentAnalysis) {
+          setCurrentAnalysis(data[0]);
+        }
+      } else {
+        setVideoList([]);
       }
+    } catch (err) {
+      console.error('Exception loading video list:', err);
+      setVideoList([]);
+    } finally {
+      setIsLoadingList(false);
     }
-    setIsLoadingList(false);
   };
 
   const pollAnalysis = useCallback(async (videoId: string) => {
