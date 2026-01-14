@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const n8nWebhookUrl = Deno.env.get("N8N_CHAT_WEBHOOK_URL");
-    const n8nSecret = Deno.env.get("N8N_WEBHOOK_AUTH");
+    const n8nAuth = Deno.env.get("N8N_WEBHOOK_AUTH");
 
     if (!n8nWebhookUrl) {
       console.error("N8N_CHAT_WEBHOOK_URL not configured");
@@ -65,8 +65,8 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     };
 
-    if (n8nSecret) {
-      headers["X-N8N-AUTH"] = n8nSecret;
+    if (n8nAuth) {
+      headers["Authorization"] = `Bearer ${n8nAuth}`;
     }
 
     console.log(`[ask-about-video] Sending to N8N: ${n8nWebhookUrl}`);
