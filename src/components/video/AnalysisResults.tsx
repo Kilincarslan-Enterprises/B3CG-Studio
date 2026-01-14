@@ -179,8 +179,8 @@ export default function AnalysisResults({
             </CardHeader>
             <CardContent>
               <ol className="space-y-3">
-                {analysis?.topThreePriorityActions && Array.isArray(analysis.topThreePriorityActions) ? (
-                  analysis.topThreePriorityActions.map((action, idx) => (
+                {analysis?.output?.topThreePriorityActions && Array.isArray(analysis.output.topThreePriorityActions) ? (
+                  analysis.output.topThreePriorityActions.map((action, idx) => (
                     <li key={idx} className="flex gap-3">
                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white text-sm flex items-center justify-center">
                         {idx + 1}

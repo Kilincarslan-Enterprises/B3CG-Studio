@@ -143,7 +143,9 @@ export interface AnalysisData {
   retentionAnalysis: RetentionAnalysis;
   loopabilityAnalysis: LoopabilityAnalysis;
   timestampedImprovements: TimestampedImprovement[];
-  topThreePriorityActions: string[];
+  output: {
+    topThreePriorityActions: string[];
+  };
   safeRewriteSuggestions: SafeRewriteSuggestions;
 }
 

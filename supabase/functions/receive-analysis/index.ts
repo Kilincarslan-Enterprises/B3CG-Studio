@@ -69,8 +69,8 @@ Deno.serve(async (req: Request) => {
 
     if (status === "completed" && analysisData) {
       updateData.analysis_data = analysisData;
-    } else if (status === "failed" && errorMessage) {
-      updateData.error_message = errorMessage;
+    } else if (status === "failed") {
+      updateData.error_message = errorMessage && errorMessage !== "NULL" ? errorMessage : "Analysis failed";
     }
 
     const { error: updateError } = await supabase
