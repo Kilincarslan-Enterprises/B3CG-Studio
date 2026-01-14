@@ -293,3 +293,22 @@ export async function getUserVideoAnalyses(): Promise<{
     };
   }
 }
+
+export async function deleteVideoAnalysis(videoId: string): Promise<{ error: Error | null }> {
+  try {
+    const { error } = await supabase
+      .from('video_analyses')
+      .delete()
+      .eq('id', videoId);
+
+    if (error) {
+      return { error: new Error(error.message) };
+    }
+
+    return { error: null };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error : new Error('Unknown error')
+    };
+  }
+}
