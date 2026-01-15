@@ -407,7 +407,17 @@ export default function AIVideoAnalyzer() {
 
         <ResizablePanel defaultSize={40} minSize={30}>
           <div className="h-full p-6 overflow-y-auto bg-slate-900/50">
-            <h2 className="text-xl font-semibold text-slate-100 mb-4">Upload & Preview</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-slate-100">Upload & Preview</h2>
+              {currentAnalysis && (
+                <button
+                  onClick={() => setCurrentAnalysis(null)}
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
+                >
+                  New Chat
+                </button>
+              )}
+            </div>
 
             {!currentAnalysis && (
               <VideoUploadZone

@@ -225,7 +225,7 @@ export default function AnalysisResults({
                     value={
                       analysis.hookEvaluation.hookStrength === 'strong'
                         ? 100
-                        : analysis.hookEvaluation.hookStrength === 'medium'
+                        : analysis.hookEvaluation.hookStrength === 'moderate'
                         ? 60
                         : 30
                     }
@@ -240,7 +240,7 @@ export default function AnalysisResults({
                     className={
                       analysis.hookEvaluation.hookStrength === 'strong'
                         ? 'bg-green-500'
-                        : analysis.hookEvaluation.hookStrength === 'medium'
+                        : analysis.hookEvaluation.hookStrength === 'moderate'
                         ? 'border-orange-400 text-orange-400'
                         : 'border-red-400 text-red-400'
                     }

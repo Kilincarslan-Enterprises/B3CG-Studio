@@ -11,11 +11,13 @@ interface AnalysisCallback {
   videoId: string;
   status: "completed" | "failed";
   analysisData?: Record<string, unknown>;
-  errorMessage?: string;
+  errorMessage?: string | null;
 }
 
 Deno.serve(async (req: Request) => {
   try {
+    console.log("[receive-analysis] Request received:", req.method);
+
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: 200,
@@ -24,6 +26,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (req.method !== "POST") {
+      console.error("[receive-analysis] Invalid method:", req.method);
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
         { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -34,7 +37,7 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Missing Supabase configuration");
+      console.error("[receive-analysis] Missing Supabase configuration");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -43,9 +46,13 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { videoId, status, analysisData, errorMessage }: AnalysisCallback = await req.json();
+    const body = await req.json();
+    console.log("[receive-analysis] Received payload:", JSON.stringify(body, null, 2));
+
+    const { videoId, status, analysisData, errorMessage }: AnalysisCallback = body;
 
     if (!videoId || !status) {
+      console.error("[receive-analysis] Missing required fields:", { videoId, status });
       return new Response(
         JSON.stringify({ error: "Missing required fields: videoId, status" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -53,6 +60,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!["completed", "failed"].includes(status)) {
+      console.error("[receive-analysis] Invalid status:", status);
       return new Response(
         JSON.stringify({ error: "Invalid status. Must be 'completed' or 'failed'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -61,6 +69,36 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[receive-analysis] Processing callback for video ${videoId} with status ${status}`);
 
+    const { data: existingVideo, error: fetchError } = await supabase
+      .from("video_analyses")
+      .select("id, status")
+      .eq("id", videoId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error(`[receive-analysis] Error fetching video ${videoId}:`, fetchError);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to fetch video record",
+          details: fetchError.message,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!existingVideo) {
+      console.error(`[receive-analysis] Video ${videoId} not found in database`);
+      return new Response(
+        JSON.stringify({
+          error: "Video not found",
+          videoId,
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[receive-analysis] Found existing video with status: ${existingVideo.status}`);
+
     const updateData: Record<string, unknown> = {
       status,
       updated_at: new Date().toISOString(),
@@ -68,10 +106,16 @@ Deno.serve(async (req: Request) => {
     };
 
     if (status === "completed" && analysisData) {
+      console.log("[receive-analysis] Adding analysis data to update");
+      console.log("[receive-analysis] Analysis data keys:", Object.keys(analysisData));
       updateData.analysis_data = analysisData;
     } else if (status === "failed") {
-      updateData.error_message = errorMessage && errorMessage !== "NULL" ? errorMessage : "Analysis failed";
+      const errorMsg = errorMessage && errorMessage !== "NULL" ? errorMessage : "Analysis failed";
+      console.log("[receive-analysis] Setting error message:", errorMsg);
+      updateData.error_message = errorMsg;
     }
+
+    console.log("[receive-analysis] Update data:", JSON.stringify(updateData, null, 2));
 
     const { error: updateError } = await supabase
       .from("video_analyses")
@@ -89,7 +133,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`[receive-analysis] Successfully updated video ${videoId}`);
+    console.log(`[receive-analysis] Successfully updated video ${videoId} to status ${status}`);
 
     return new Response(
       JSON.stringify({
@@ -101,7 +145,7 @@ Deno.serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("[receive-analysis] Error:", error);
+    console.error("[receive-analysis] Unexpected error:", error);
     return new Response(
       JSON.stringify({
         error: "Internal server error",

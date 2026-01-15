@@ -101,7 +101,7 @@ export interface ViralityEvaluation {
 
 export interface HookEvaluation {
   hookPresentFirst2Seconds: boolean;
-  hookStrength: 'weak' | 'medium' | 'strong';
+  hookStrength: 'weak' | 'moderate' | 'strong';
   reasoning: string;
 }
 
@@ -112,14 +112,14 @@ export interface BestPractice {
 }
 
 export interface RetentionAnalysis {
-  earlyDropOffRisk: string;
-  pacingQuality: string;
+  earlyDropOffRisk: 'low' | 'medium' | 'high';
+  pacingQuality: 'slow' | 'acceptable' | 'fast';
   structureIssues: string[];
 }
 
 export interface LoopabilityAnalysis {
   loopPresent: boolean;
-  loopPotential: string;
+  loopPotential: 'low' | 'medium' | 'high';
   recommendation: string;
 }
 
@@ -136,7 +136,6 @@ export interface SafeRewriteSuggestions {
 }
 
 export interface AnalysisData {
-  videoId: string;
   viralityEvaluation: ViralityEvaluation;
   hookEvaluation: HookEvaluation;
   bestPracticeComparison: BestPractice[];
@@ -147,6 +146,13 @@ export interface AnalysisData {
     topThreePriorityActions: string[];
   };
   safeRewriteSuggestions: SafeRewriteSuggestions;
+}
+
+export interface AnalysisCallback {
+  videoId: string;
+  status: 'completed' | 'failed';
+  analysisData?: AnalysisData;
+  errorMessage?: string | null;
 }
 
 export interface ChatMessage {
