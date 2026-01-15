@@ -320,101 +320,317 @@ export default function AIVideoAnalyzer() {
   };
 
   return (
-    <div className="h-full bg-slate-950 p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-100 mb-2">AI Video Analyzer</h1>
-        <p className="text-slate-400">
+    <div className="h-full bg-slate-950 p-3 sm:p-6 flex flex-col">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2">AI Video Analyzer</h1>
+        <p className="text-xs sm:text-base text-slate-400">
           Upload your video and receive AI-powered analysis to optimize for virality
         </p>
       </div>
 
-      <ResizablePanelGroup direction="horizontal" className="h-[calc(100%-5rem)] rounded-lg border border-slate-800">
-        <ResizablePanel defaultSize={15} minSize={12} maxSize={25}>
-          <div className="h-full flex flex-col bg-slate-900/50 overflow-hidden">
-            <div className="p-4 border-b border-slate-700">
-              <h3 className="font-semibold text-slate-100 text-sm">Video Sessions</h3>
+      {/* Desktop Layout */}
+      <div className="hidden lg:block flex-1">
+        <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border border-slate-800">
+          <ResizablePanel defaultSize={15} minSize={12} maxSize={25}>
+            <div className="h-full flex flex-col bg-slate-900/50 overflow-hidden">
+              <div className="p-4 border-b border-slate-700">
+                <h3 className="font-semibold text-slate-100 text-sm">Video Sessions</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {isLoadingList ? (
+                  <div className="p-4">
+                    <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                  </div>
+                ) : videoList.length === 0 ? (
+                  <div className="p-4 text-center">
+                    <FileVideo className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400">No videos yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 p-2">
+                    {videoList.map((video) => (
+                      <button
+                        key={video.id}
+                        onClick={() => handleSelectVideo(video)}
+                        className={`w-full text-left p-3 rounded transition ${
+                          currentAnalysis?.id === video.id
+                            ? 'bg-blue-500/20 border border-blue-500/50'
+                            : 'bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-slate-100 truncate">
+                              {video.file_name}
+                            </p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Clock className="w-3 h-3 text-slate-500" />
+                              <p className="text-xs text-slate-400">
+                                {formatDate(video.created_at)}
+                              </p>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className={`mt-2 text-xs ${
+                                video.status === 'completed'
+                                  ? 'border-green-400 text-green-400'
+                                  : video.status === 'failed'
+                                  ? 'border-red-400 text-red-400'
+                                  : 'border-blue-400 text-blue-400'
+                              }`}
+                            >
+                              {video.status === 'processing' && (
+                                <Loader2 className="w-2 h-2 mr-1 animate-spin" />
+                              )}
+                              {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
+                            </Badge>
+                          </div>
+                          {currentAnalysis?.id === video.id && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteVideo(video.id);
+                              }}
+                              className="text-slate-500 hover:text-red-400 transition"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {isLoadingList ? (
-                <div className="p-4">
-                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
-                </div>
-              ) : videoList.length === 0 ? (
-                <div className="p-4 text-center">
-                  <FileVideo className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                  <p className="text-xs text-slate-400">No videos yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2 p-2">
-                  {videoList.map((video) => (
-                    <button
-                      key={video.id}
-                      onClick={() => handleSelectVideo(video)}
-                      className={`w-full text-left p-3 rounded transition ${
-                        currentAnalysis?.id === video.id
-                          ? 'bg-blue-500/20 border border-blue-500/50'
-                          : 'bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={40} minSize={30}>
+            <div className="h-full p-6 overflow-y-auto bg-slate-900/50">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-slate-100">Upload & Preview</h2>
+                {currentAnalysis && (
+                  <button
+                    onClick={() => setCurrentAnalysis(null)}
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
+                  >
+                    New Chat
+                  </button>
+                )}
+              </div>
+
+              {!currentAnalysis && (
+                <VideoUploadZone
+                  onFileSelect={handleFileSelect}
+                  isUploading={isUploading}
+                  uploadProgress={uploadProgress}
+                />
+              )}
+
+              {currentAnalysis && (
+                <div className="space-y-4">
+                  <Card className="bg-slate-800 border-slate-700">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-3">
+                        <FileVideo className="w-5 h-5 text-blue-400 mt-1" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-slate-100 truncate">
-                            {video.file_name}
+                          <p className="text-slate-200 font-medium truncate">
+                            {currentAnalysis.file_name}
                           </p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Clock className="w-3 h-3 text-slate-500" />
-                            <p className="text-xs text-slate-400">
-                              {formatDate(video.created_at)}
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {currentAnalysis.file_size && (
+                              <Badge variant="outline" className="border-slate-600 text-slate-400">
+                                {formatFileSize(currentAnalysis.file_size)}
+                              </Badge>
+                            )}
+                            {currentAnalysis.duration && (
+                              <Badge variant="outline" className="border-slate-600 text-slate-400">
+                                {formatDuration(currentAnalysis.duration)}
+                              </Badge>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={
+                                currentAnalysis.status === 'completed'
+                                  ? 'border-green-400 text-green-400'
+                                  : currentAnalysis.status === 'failed'
+                                  ? 'border-red-400 text-red-400'
+                                  : 'border-blue-400 text-blue-400'
+                              }
+                            >
+                              {currentAnalysis.status === 'processing' && (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              )}
+                              {currentAnalysis.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {currentAnalysis.video_url && (
+                    <VideoPlayer
+                      videoUrl={currentAnalysis.video_url}
+                      currentTime={videoTime}
+                      onTimeUpdate={(time) => setVideoTime(time)}
+                    />
+                  )}
+
+                  {currentAnalysis.status === 'processing' && (
+                    <Card className="bg-blue-500/10 border-blue-500/30">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3">
+                          <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                          <div>
+                            <p className="text-slate-200 font-medium">Analyzing your video</p>
+                            <p className="text-sm text-slate-400">
+                              This usually takes 2-5 minutes
                             </p>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className={`mt-2 text-xs ${
-                              video.status === 'completed'
-                                ? 'border-green-400 text-green-400'
-                                : video.status === 'failed'
-                                ? 'border-red-400 text-red-400'
-                                : 'border-blue-400 text-blue-400'
-                            }`}
-                          >
-                            {video.status === 'processing' && (
-                              <Loader2 className="w-2 h-2 mr-1 animate-spin" />
-                            )}
-                            {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
-                          </Badge>
                         </div>
-                        {currentAnalysis?.id === video.id && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteVideo(video.id);
-                            }}
-                            className="text-slate-500 hover:text-red-400 transition"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {currentAnalysis.status === 'failed' && (
+                    <Card className="bg-red-500/10 border-red-500/30">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
+                          <div>
+                            <p className="text-slate-200 font-medium">Analysis failed</p>
+                            <p className="text-sm text-slate-400">
+                              {currentAnalysis.error_message || 'An error occurred during analysis'}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
             </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          <ResizablePanel defaultSize={60} minSize={40}>
+            <div className="h-full flex flex-col bg-slate-900/30">
+              <div className="flex-1 overflow-y-auto p-6">
+                <h2 className="text-xl font-semibold text-slate-100 mb-4">Analysis Results</h2>
+
+                {!currentAnalysis && (
+                  <Card className="bg-slate-900/50 border-slate-700">
+                    <CardContent className="pt-12 pb-12 text-center">
+                      <FileVideo className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                      <p className="text-slate-400">
+                        Upload a video to start the analysis
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {currentAnalysis && !currentAnalysis.analysis_data && currentAnalysis.status !== 'failed' && (
+                  <Card className="bg-slate-900/50 border-slate-700">
+                    <CardContent className="pt-12 pb-12 text-center">
+                      <Loader2 className="w-12 h-12 text-blue-400 mx-auto mb-4 animate-spin" />
+                      <p className="text-slate-400">
+                        Waiting for analysis results...
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {currentAnalysis?.analysis_data && (
+                  <>
+                    <AnalysisResults
+                      analysis={currentAnalysis.analysis_data}
+                      onTimestampClick={handleTimestampClick}
+                    />
+
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold text-slate-100 mb-4">
+                        Chat with AI
+                      </h3>
+                      <div className="h-[500px]">
+                        <ChatInterface
+                          messages={currentAnalysis.chat_history}
+                          onSendMessage={handleSendMessage}
+                          isLoading={isChatLoading}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="lg:hidden flex-1 flex flex-col overflow-y-auto">
+        <div className="space-y-4">
+          <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
+            <h3 className="font-semibold text-slate-100 text-sm mb-3">Video Sessions</h3>
+            {isLoadingList ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+              </div>
+            ) : videoList.length === 0 ? (
+              <div className="text-center py-4">
+                <FileVideo className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+                <p className="text-xs text-slate-400">No videos yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {videoList.map((video) => (
+                  <button
+                    key={video.id}
+                    onClick={() => handleSelectVideo(video)}
+                    className={`w-full text-left p-2 rounded text-xs transition ${
+                      currentAnalysis?.id === video.id
+                        ? 'bg-blue-500/20 border border-blue-500/50'
+                        : 'bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50'
+                    }`}
+                  >
+                    <p className="font-medium text-slate-100 truncate">
+                      {video.file_name}
+                    </p>
+                    <p className="text-slate-400">{formatDate(video.created_at)}</p>
+                    <Badge
+                      variant="outline"
+                      className={`mt-1 text-xs ${
+                        video.status === 'completed'
+                          ? 'border-green-400 text-green-400'
+                          : video.status === 'failed'
+                          ? 'border-red-400 text-red-400'
+                          : 'border-blue-400 text-blue-400'
+                      }`}
+                    >
+                      {video.status === 'processing' && (
+                        <Loader2 className="w-2 h-2 mr-1 animate-spin" />
+                      )}
+                      {video.status}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        </ResizablePanel>
 
-        <ResizableHandle withHandle />
-
-        <ResizablePanel defaultSize={40} minSize={30}>
-          <div className="h-full p-6 overflow-y-auto bg-slate-900/50">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-slate-100">Upload & Preview</h2>
+          <div className="bg-slate-900/50 border border-slate-700 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-100">Upload & Preview</h2>
               {currentAnalysis && (
                 <button
                   onClick={() => setCurrentAnalysis(null)}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition"
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
                 >
-                  New Chat
+                  New
                 </button>
               )}
             </div>
@@ -428,40 +644,40 @@ export default function AIVideoAnalyzer() {
             )}
 
             {currentAnalysis && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Card className="bg-slate-800 border-slate-700">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <FileVideo className="w-5 h-5 text-blue-400 mt-1" />
+                  <CardContent className="pt-3 pb-3">
+                    <div className="flex items-start gap-2">
+                      <FileVideo className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-slate-200 font-medium truncate">
+                        <p className="text-xs sm:text-sm text-slate-200 font-medium truncate">
                           {currentAnalysis.file_name}
                         </p>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-1 mt-2">
                           {currentAnalysis.file_size && (
-                            <Badge variant="outline" className="border-slate-600 text-slate-400">
+                            <Badge variant="outline" className="border-slate-600 text-slate-400 text-xs">
                               {formatFileSize(currentAnalysis.file_size)}
                             </Badge>
                           )}
                           {currentAnalysis.duration && (
-                            <Badge variant="outline" className="border-slate-600 text-slate-400">
+                            <Badge variant="outline" className="border-slate-600 text-slate-400 text-xs">
                               {formatDuration(currentAnalysis.duration)}
                             </Badge>
                           )}
                           <Badge
                             variant="outline"
-                            className={
+                            className={`text-xs ${
                               currentAnalysis.status === 'completed'
                                 ? 'border-green-400 text-green-400'
                                 : currentAnalysis.status === 'failed'
                                 ? 'border-red-400 text-red-400'
                                 : 'border-blue-400 text-blue-400'
-                            }
+                            }`}
                           >
                             {currentAnalysis.status === 'processing' && (
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              <Loader2 className="w-2 h-2 mr-1 animate-spin" />
                             )}
-                            {currentAnalysis.status.toUpperCase()}
+                            {currentAnalysis.status}
                           </Badge>
                         </div>
                       </div>
@@ -479,12 +695,12 @@ export default function AIVideoAnalyzer() {
 
                 {currentAnalysis.status === 'processing' && (
                   <Card className="bg-blue-500/10 border-blue-500/30">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-3">
-                        <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-blue-400 animate-spin flex-shrink-0" />
                         <div>
-                          <p className="text-slate-200 font-medium">Analyzing your video</p>
-                          <p className="text-sm text-slate-400">
+                          <p className="text-xs sm:text-sm text-slate-200 font-medium">Analyzing video</p>
+                          <p className="text-xs text-slate-400">
                             This usually takes 2-5 minutes
                           </p>
                         </div>
@@ -495,12 +711,12 @@ export default function AIVideoAnalyzer() {
 
                 {currentAnalysis.status === 'failed' && (
                   <Card className="bg-red-500/10 border-red-500/30">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-slate-200 font-medium">Analysis failed</p>
-                          <p className="text-sm text-slate-400">
+                          <p className="text-xs sm:text-sm text-slate-200 font-medium">Analysis failed</p>
+                          <p className="text-xs text-slate-400">
                             {currentAnalysis.error_message || 'An error occurred during analysis'}
                           </p>
                         </div>
@@ -511,62 +727,56 @@ export default function AIVideoAnalyzer() {
               </div>
             )}
           </div>
-        </ResizablePanel>
 
-        <ResizableHandle withHandle />
+          <div className="bg-slate-900/30 border border-slate-700 rounded-lg p-4">
+            <h2 className="text-sm sm:text-base font-semibold text-slate-100 mb-3">Analysis Results</h2>
 
-        <ResizablePanel defaultSize={60} minSize={40}>
-          <div className="h-full flex flex-col bg-slate-900/30">
-            <div className="flex-1 overflow-y-auto p-6">
-              <h2 className="text-xl font-semibold text-slate-100 mb-4">Analysis Results</h2>
+            {!currentAnalysis && (
+              <Card className="bg-slate-900/50 border-slate-700">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <FileVideo className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm text-slate-400">
+                    Upload a video to start the analysis
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-              {!currentAnalysis && (
-                <Card className="bg-slate-900/50 border-slate-700">
-                  <CardContent className="pt-12 pb-12 text-center">
-                    <FileVideo className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-                    <p className="text-slate-400">
-                      Upload a video to start the analysis
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+            {currentAnalysis && !currentAnalysis.analysis_data && currentAnalysis.status !== 'failed' && (
+              <Card className="bg-slate-900/50 border-slate-700">
+                <CardContent className="pt-6 pb-6 text-center">
+                  <Loader2 className="w-8 h-8 text-blue-400 mx-auto mb-2 animate-spin" />
+                  <p className="text-xs sm:text-sm text-slate-400">
+                    Waiting for analysis results...
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-              {currentAnalysis && !currentAnalysis.analysis_data && currentAnalysis.status !== 'failed' && (
-                <Card className="bg-slate-900/50 border-slate-700">
-                  <CardContent className="pt-12 pb-12 text-center">
-                    <Loader2 className="w-12 h-12 text-blue-400 mx-auto mb-4 animate-spin" />
-                    <p className="text-slate-400">
-                      Waiting for analysis results...
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+            {currentAnalysis?.analysis_data && (
+              <>
+                <AnalysisResults
+                  analysis={currentAnalysis.analysis_data}
+                  onTimestampClick={handleTimestampClick}
+                />
 
-              {currentAnalysis?.analysis_data && (
-                <>
-                  <AnalysisResults
-                    analysis={currentAnalysis.analysis_data}
-                    onTimestampClick={handleTimestampClick}
-                  />
-
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-slate-100 mb-4">
-                      Chat with AI
-                    </h3>
-                    <div className="h-[500px]">
-                      <ChatInterface
-                        messages={currentAnalysis.chat_history}
-                        onSendMessage={handleSendMessage}
-                        isLoading={isChatLoading}
-                      />
-                    </div>
+                <div className="mt-4">
+                  <h3 className="text-sm font-semibold text-slate-100 mb-3">
+                    Chat with AI
+                  </h3>
+                  <div className="h-[300px]">
+                    <ChatInterface
+                      messages={currentAnalysis.chat_history}
+                      onSendMessage={handleSendMessage}
+                      isLoading={isChatLoading}
+                    />
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        </div>
+      </div>
     </div>
   );
 }
