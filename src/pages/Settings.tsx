@@ -3,6 +3,10 @@ import { Button } from '../components/ui/button';
 import { supabase } from '../lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface SettingsProps {
   session: {
@@ -14,8 +18,42 @@ interface SettingsProps {
 }
 
 export default function Settings({ session }: SettingsProps) {
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast.error(error.message || 'Failed to change password');
+      } else {
+        toast.success('Password changed successfully');
+        setShowPasswordDialog(false);
+        setOldPassword('');
+        setNewPassword('');
+      }
+    } catch {
+      toast.error('Error changing password');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,7 +151,7 @@ export default function Settings({ session }: SettingsProps) {
           <CardDescription className="text-slate-400">Manage your security settings</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button className="w-full bg-purple-600 hover:bg-purple-700 justify-start gap-2">
+          <Button onClick={() => setShowPasswordDialog(true)} className="w-full bg-purple-600 hover:bg-purple-700 justify-start gap-2">
             <Lock className="w-4 h-4" />
             Change Password
           </Button>
@@ -146,6 +184,52 @@ export default function Settings({ session }: SettingsProps) {
           <strong>B3CG Studio Version:</strong> 1.0.0 • Built with React, Vite, and Supabase
         </p>
       </div>
+
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="bg-slate-800 border-slate-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Change Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-slate-400 block mb-2">Current Password</label>
+              <Input
+                type="password"
+                placeholder="Enter your current password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-slate-400 block mb-2">New Password</label>
+              <Input
+                type="password"
+                placeholder="Enter your new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500"
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={() => setShowPasswordDialog(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={isLoading}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+              >
+                {isLoading ? 'Changing...' : 'Change Password'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
