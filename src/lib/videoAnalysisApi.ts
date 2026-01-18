@@ -115,7 +115,6 @@ export async function triggerVideoAnalysis(
 ): Promise<{ error: Error | null }> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     console.log('[triggerVideoAnalysis] Starting analysis trigger', {
       videoId,
@@ -124,11 +123,19 @@ export async function triggerVideoAnalysis(
       endpoint: `${supabaseUrl}/functions/v1/analyze-video`,
     });
 
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    if (!token) {
+      console.error('[triggerVideoAnalysis] No session token available');
+      return { error: new Error('No authentication session') };
+    }
+
     const response = await fetch(`${supabaseUrl}/functions/v1/analyze-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         videoId,
@@ -195,7 +202,6 @@ export async function sendChatMessage(
 ): Promise<{ response: string | null; error: Error | null }> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     console.log('[sendChatMessage] Sending chat message', {
       videoId,
@@ -203,11 +209,19 @@ export async function sendChatMessage(
       endpoint: `${supabaseUrl}/functions/v1/ask-about-video`,
     });
 
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    if (!token) {
+      console.error('[sendChatMessage] No session token available');
+      return { response: null, error: new Error('No authentication session') };
+    }
+
     const response = await fetch(`${supabaseUrl}/functions/v1/ask-about-video`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         videoId,
